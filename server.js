@@ -16,17 +16,31 @@ cloudinary.config({
 // ─── API: GET LIBRARY ──────────────────────────────────────
 app.get("/library", async (req, res) => {
     try {
-        const result = await cloudinary.search
-            .expression(
-                'resource_type:video AND (asset_folder="Our_Escape/Fav" OR asset_folder="Our_Escape/Kuthu" OR asset_folder="Our_Escape/My Escape" OR asset_folder="Our_Escape/This Is The Weekend")'
-            )
-            .sort_by("filename", "asc")
-            .max_results(200)
-            .execute();
+        let allResources = [];
+        let nextCursor = null;
+
+        do {
+            let query = cloudinary.search
+                .expression(
+                    'resource_type:video AND (asset_folder="Our_Escape/Fav" OR asset_folder="Our_Escape/Kuthu" OR asset_folder="Our_Escape/My Escape" OR asset_folder="Our_Escape/This Is The Weekend")'
+                )
+                .sort_by("filename", "asc")
+                .max_results(100);
+
+            if (nextCursor) {
+                query = query.next_cursor(nextCursor);
+            }
+
+            const result = await query.execute();
+
+            allResources = allResources.concat(result.resources);
+            nextCursor = result.next_cursor;
+
+        } while (nextCursor);
 
         let library = {};
 
-        result.resources.forEach((file) => {
+        allResources.forEach((file) => {
             const parts = file.asset_folder.split("/");
             const category = parts.slice(1).join("/") || "Others";
 
@@ -52,7 +66,9 @@ app.get("/library", async (req, res) => {
         });
 
         res.json(library);
+
     } catch (err) {
+        console.error("Library error:", err.message);
         res.status(500).json({ error: err.message });
     }
 });
