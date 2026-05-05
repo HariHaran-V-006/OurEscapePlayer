@@ -21,9 +21,7 @@ app.get("/library", async (req, res) => {
 
         do {
             let query = cloudinary.search
-                .expression(
-                    'resource_type:video AND (asset_folder="Our_Escape/Fav" OR asset_folder="Our_Escape/Kuthu" OR asset_folder="Our_Escape/My Escape" OR asset_folder="Our_Escape/This Is The Weekend")'
-                )
+                .expression('resource_type:video AND asset_folder:Our_Escape/*')
                 .sort_by("filename", "asc")
                 .max_results(100);
 
